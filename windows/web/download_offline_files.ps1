@@ -60,8 +60,8 @@ $DownloadDir = if ($Env:WINDOWS_OFFLINE_FILES_DIR) { $Env:WINDOWS_OFFLINE_FILES_
 
 Write-Output "Download directory set to ""$DownloadDir"""
 
-Download-File -Uri "https://github.com/SlimeVR/SlimeVR-Server/releases/latest/download/SlimeVR-win64.zip" -OutFile "$DownloadDir\SlimeVR-win64.zip"
+Download-File -Uri "https://github.com/SlimeVR/SlimeVR-Server/releases/download/v0.12.1/SlimeVR-win64.zip" -OutFile "$DownloadDir\SlimeVR-win64.zip"
 Download-File -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile "$DownloadDir\MicrosoftEdgeWebView2RuntimeInstaller.exe"
 Download-File -Uri "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.10%2B7/OpenJDK17U-jre_x64_windows_hotspot_17.0.10_7.zip" -OutFile "$DownloadDir\OpenJDK17U-jre_x64_windows_hotspot_17.0.10_7.zip"
-Download-File -Uri "https://github.com/SlimeVR/SlimeVR-OpenVR-Driver/releases/latest/download/slimevr-openvr-driver-win64.zip" -OutFile "$DownloadDir\slimevr-openvr-driver-win64.zip"
-Download-File -Uri "https://github.com/SlimeVR/SlimeVR-Feeder-App/releases/latest/download/SlimeVR-Feeder-App-win64.zip" -OutFile "$DownloadDir\SlimeVR-Feeder-App-win64.zip"
+Download-File -Uri "https://github.com/SlimeVR/SlimeVR-OpenVR-Driver/releases/download/v0.2.2/slimevr-openvr-driver-win64.zip" -OutFile "$DownloadDir\slimevr-openvr-driver-win64.zip"
+Download-File -Uri "https://github.com/SlimeVR/SlimeVR-Feeder-App/releases/download/v0.2.11/SlimeVR-Feeder-App-win64.zip" -OutFile "$DownloadDir\SlimeVR-Feeder-App-win64.zip"
