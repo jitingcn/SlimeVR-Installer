@@ -63,14 +63,23 @@ $ServerVersion = "v0.13.0"
 $DriverVersion = "v0.2.2"
 $FeederVersion = "v0.2.11"
 
-$SharedDir = New-Item (Join-Path $DestDir "shared") -ItemType directory -Force
-$VersionDir = New-Item (Join-Path $DestDir $ServerVersion) -ItemType directory -Force
+$SharedDir = New-Item (Join-Path $DestDir "versions") -ItemType directory -Force
 
-$ServerFile = Join-Path $VersionDir "SlimeVR-win64.zip"
-$WebView2File = Join-Path $SharedDir "MicrosoftEdgeWebView2RuntimeInstaller.exe"
-$JavaFile = Join-Path $SharedDir "OpenJDK17U-jre_x64_windows_hotspot_17.0.10_7.zip"
-$DriverFile = Join-Path $VersionDir "slimevr-openvr-driver-win64.zip"
-$FeederFile = Join-Path $VersionDir "SlimeVR-Feeder-App-win64.zip"
+$ServerDir = New-Item (Join-Path $SharedDir "server") -ItemType directory -Force
+$WebView2Dir = New-Item (Join-Path $SharedDir "webview2") -ItemType directory -Force
+$JavaDir = New-Item (Join-Path $SharedDir "java") -ItemType directory -Force
+$DriverDir = New-Item (Join-Path $SharedDir "driver") -ItemType directory -Force
+$FeederDir = New-Item (Join-Path $SharedDir "feeder") -ItemType directory -Force
+
+$ServerVerDir = New-Item (Join-Path $ServerDir $ServerVersion) -ItemType directory -Force
+$DriverVerDir = New-Item (Join-Path $DriverDir $DriverVersion) -ItemType directory -Force
+$FeederVerDir = New-Item (Join-Path $FeederDir $FeederVersion) -ItemType directory -Force
+
+$ServerFile = Join-Path $ServerVerDir "SlimeVR-win64.zip"
+$WebView2File = Join-Path $WebView2Dir "MicrosoftEdgeWebView2RuntimeInstaller.exe"
+$JavaFile = Join-Path $JavaDir "OpenJDK17U-jre_x64_windows_hotspot_17.0.10_7.zip"
+$DriverFile = Join-Path $DriverVerDir "slimevr-openvr-driver-win64.zip"
+$FeederFile = Join-Path $FeederVerDir "SlimeVR-Feeder-App-win64.zip"
 
 Get-File -Uri "https://github.com/SlimeVR/SlimeVR-Server/releases/download/$ServerVersion/SlimeVR-win64.zip" -OutFile $ServerFile
 Get-File -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile $WebView2File
