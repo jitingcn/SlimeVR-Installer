@@ -78,4 +78,5 @@ Get-File -Uri "https://github.com/adoptium/temurin17-binaries/releases/download/
 Get-File -Uri "https://github.com/SlimeVR/SlimeVR-OpenVR-Driver/releases/download/$DriverVersion/slimevr-openvr-driver-win64.zip" -OutFile $DriverFile
 Get-File -Uri "https://github.com/SlimeVR/SlimeVR-Feeder-App/releases/download/$FeederVersion/SlimeVR-Feeder-App-win64.zip" -OutFile $FeederFile
 
+Write-Output "Copying downloaded files to output directory..."
 Copy-Item @($JavaFile, $WebView2File, $ServerFile, $DriverFile, $FeederFile) $DestDir -Force
