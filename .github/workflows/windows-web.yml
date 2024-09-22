@@ -19,7 +19,7 @@ jobs:
       # The directory of the web installer project
       WINDOWS_WEB_DIR: ${{ github.workspace }}/windows/web
       PLUGINS_DIR: ${{ github.workspace }}/NSIS_Plugins
-      WINDOWS_OFFLINE_FILES_DIR: ${{ github.workspace }}/windows/web/Offline_Files
+      WINDOWS_OFFLINE_FILES_DIR: ${{ github.workspace }}/windows/web/offline-files
 
     steps:
       - uses: actions/checkout@v4
@@ -27,14 +27,14 @@ jobs:
           submodules: recursive
 
       - name: Create plugins directory for NSIS
-        run: mkdir -p "${PLUGINS_DIR}" | cp -rl "${WINDOWS_WEB_DIR}/plugins"/*/* "${PLUGINS_DIR}/"
+        run: mkdir -p "${{ env.PLUGINS_DIR }}" | cp -rl "${{ env.WINDOWS_WEB_DIR }}/plugins"/*/* "${{ env.PLUGINS_DIR }}/"
         shell: bash
 
       - name: Restore cached offline installer files
         uses: actions/cache@v4
         with:
           path: ${{ env.WINDOWS_OFFLINE_FILES_DIR }}
-          key: ${{ runner.os }}-offline-files-v0.12.1
+          key: ${{ runner.os }}
 
       - name: Download offline installer files
         run: ."${{ env.WINDOWS_WEB_DIR }}/download_offline_files.ps1"
