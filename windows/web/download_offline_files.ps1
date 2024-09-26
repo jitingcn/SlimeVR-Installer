@@ -1,7 +1,7 @@
-Function Get-File {
+Function Get-File-From-Uri {
     Param (
-        [Parameter(Mandatory = $True)] [System.Uri]$Uri,
-        [Parameter(Mandatory = $True )] [string]$OutFile
+        [Parameter(Mandatory)] [System.Uri]$Uri,
+        [Parameter(Mandatory)] [string]$OutFile
     )
 
     # Create a FileInfo object out of the output file for reading and writing information
@@ -81,11 +81,38 @@ $JavaFile = Join-Path $JavaDir "OpenJDK17U-jre_x64_windows_hotspot_17.0.10_7.zip
 $DriverFile = Join-Path $DriverVerDir "slimevr-openvr-driver-win64.zip"
 $FeederFile = Join-Path $FeederVerDir "SlimeVR-Feeder-App-win64.zip"
 
-Get-File -Uri "https://github.com/SlimeVR/SlimeVR-Server/releases/download/$ServerVersion/SlimeVR-win64.zip" -OutFile $ServerFile
-Get-File -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile $WebView2File
-Get-File -Uri "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.10%2B7/OpenJDK17U-jre_x64_windows_hotspot_17.0.10_7.zip" -OutFile $JavaFile
-Get-File -Uri "https://github.com/SlimeVR/SlimeVR-OpenVR-Driver/releases/download/$DriverVersion/slimevr-openvr-driver-win64.zip" -OutFile $DriverFile
-Get-File -Uri "https://github.com/SlimeVR/SlimeVR-Feeder-App/releases/download/$FeederVersion/SlimeVR-Feeder-App-win64.zip" -OutFile $FeederFile
+$ServerUrl = "https://github.com/SlimeVR/SlimeVR-Server/releases/download/$ServerVersion/SlimeVR-win64.zip"
+$WebView2Url = "https://go.microsoft.com/fwlink/p/?LinkId=2124703"
+$JavaUrl = "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.10%2B7/OpenJDK17U-jre_x64_windows_hotspot_17.0.10_7.zip"
+$DriverUrl = "https://github.com/SlimeVR/SlimeVR-OpenVR-Driver/releases/download/$DriverVersion/slimevr-openvr-driver-win64.zip"
+$FeederUrl = "https://github.com/SlimeVR/SlimeVR-Feeder-App/releases/download/$FeederVersion/SlimeVR-Feeder-App-win64.zip"
+
+Get-File-From-Uri -Uri $ServerUrl -OutFile $ServerFile
+Get-File-From-Uri -Uri $WebView2Url -OutFile $WebView2File
+Get-File-From-Uri -Uri $JavaUrl -OutFile $JavaFile
+Get-File-From-Uri -Uri $DriverUrl -OutFile $DriverFile
+Get-File-From-Uri -Uri $FeederUrl -OutFile $FeederFile
 
 Write-Output "Copying downloaded files to output directory..."
 Copy-Item @($JavaFile, $WebView2File, $ServerFile, $DriverFile, $FeederFile) $DestDir -Force
+
+Write-Output "Generating installer manifest..."
+$BaseFolder = $Env:WINDOWS_WEB_DIR ?? "."
+Set-Content -Path (Join-Path $BaseFolder "installer_manifest.txt") @"
+# Versions
+Server $ServerVersion ($ServerUrl)
+Driver $DriverVersion ($DriverUrl)
+Feeder-App $FeederVersion ($FeederUrl)
+Java 17.0.4.1+1-jre ($JavaUrl)
+WebView2 [online installer, exe included] ($WebView2Url)
+
+# Workflow run
+$($Env:GH_RUN_URL)
+
+# Mirror links
+
+# Hashes
+
+# Notes
+For your own safety, you can pass the installer through VirusTotal at https://www.virustotal.com/
+"@

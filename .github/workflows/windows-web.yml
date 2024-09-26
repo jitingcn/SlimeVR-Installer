@@ -20,6 +20,7 @@ jobs:
       WINDOWS_WEB_DIR: ${{ github.workspace }}/windows/web
       PLUGINS_DIR: ${{ github.workspace }}/NSIS_Plugins
       WINDOWS_OFFLINE_FILES_DIR: ${{ github.workspace }}/windows/web/offline-files
+      GH_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
     steps:
       - uses: actions/checkout@v4
@@ -47,10 +48,16 @@ jobs:
           script-file: ${{ env.WINDOWS_WEB_DIR }}/slimevr_web_installer.nsi
           additional-plugin-paths: ${{ env.PLUGINS_DIR }}
 
+      - name: Compute installer hashes
+        run: ."${{ env.WINDOWS_WEB_DIR }}/manifest-hashes.ps1"
+        shell: pwsh
+
       - name: Upload the installer as a build artifact
         uses: actions/upload-artifact@v4
         with:
           # Artifact name
           name: "slimevr_web_installer" # optional, default is artifact
           # A file, directory or wildcard pattern that describes what to upload
-          path: ${{ env.WINDOWS_WEB_DIR }}/slimevr_web_installer.exe
+          path: |
+            ${{ env.WINDOWS_WEB_DIR }}/slimevr_web_installer.exe
+            ${{ env.WINDOWS_WEB_DIR }}/installer_manifest.txt
