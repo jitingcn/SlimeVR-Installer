@@ -398,7 +398,7 @@ Section "SlimeVR Server" SEC_SERVER
     ${EndIf}
 
     DetailPrint "Copying SlimeVR Server to installation folder..."
-    CopyFiles /SILENT "${SLIMETEMP}\SlimeVR\stay-aligned-v5.7\*" $INSTDIR
+    CopyFiles /SILENT "${SLIMETEMP}\SlimeVR\stay-aligned-v6.2.zip\*" $INSTDIR
 
     IfFileExists "$INSTDIR\slimevr-ui.exe" found not_found
     found:
