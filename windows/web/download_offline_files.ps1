@@ -60,6 +60,7 @@ $DestDir = New-Item (& { $Env:WINDOWS_OFFLINE_FILES_DIR ?? "offline-files" }) -I
 Write-Output "Output directory set to ""$DestDir"""
 
 $ServerVersion = "v0.14.0"
+$JavaVersion = "17.0.15_6"
 $DriverVersion = "v0.2.2"
 $FeederVersion = "v0.2.11"
 
@@ -78,14 +79,14 @@ $FeederVerDir = New-Item (Join-Path $FeederDir $FeederVersion) -ItemType directo
 
 $ServerFile = Join-Path $ServerVerDir "SlimeVR-win64.zip"
 $WebView2File = Join-Path $WebView2Dir "MicrosoftEdgeWebView2RuntimeInstaller.exe"
-$JavaFile = Join-Path $JavaDir "OpenJDK17U-jre_x64_windows_hotspot_17.0.10_7.zip"
+$JavaFile = Join-Path $JavaDir "OpenJDK17U-jre_x64_windows_hotspot_$JavaVersion.zip"
 $DriverFile = Join-Path $DriverVerDir "slimevr-openvr-driver-win64.zip"
 $FeederFile = Join-Path $FeederVerDir "SlimeVR-Feeder-App-win64.zip"
 $VcredistFile = Join-Path $VcredistDir "vc_redist.x64.exe"
 
 $ServerUrl = "https://github.com/SlimeVR/SlimeVR-Server/releases/download/$ServerVersion/SlimeVR-win64.zip"
 $WebView2Url = "https://go.microsoft.com/fwlink/p/?LinkId=2124703"
-$JavaUrl = "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.10%2B7/OpenJDK17U-jre_x64_windows_hotspot_17.0.10_7.zip"
+$JavaUrl = "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-$($JavaVersion -Replace "_", "%2B")/OpenJDK17U-jre_x64_windows_hotspot_$JavaVersion.zip"
 $DriverUrl = "https://github.com/SlimeVR/SlimeVR-OpenVR-Driver/releases/download/$DriverVersion/slimevr-openvr-driver-win64.zip"
 $FeederUrl = "https://github.com/SlimeVR/SlimeVR-Feeder-App/releases/download/$FeederVersion/SlimeVR-Feeder-App-win64.zip"
 $VcredistUrl = "https://aka.ms/vs/17/release/vc_redist.x64.exe"
@@ -107,7 +108,7 @@ Set-Content -Path (Join-Path $BaseFolder "installer_manifest.txt") @"
 Server $ServerVersion ($ServerUrl)
 Driver $DriverVersion ($DriverUrl)
 Feeder-App $FeederVersion ($FeederUrl)
-Java 17.0.4.1+1-jre ($JavaUrl)
+Java $($JavaVersion -Replace "_", "+")-jre ($JavaUrl)
 WebView2 [online installer, exe included] ($WebView2Url)
 Microsoft Visual C++ Redistributable ($VcredistUrl)
 
