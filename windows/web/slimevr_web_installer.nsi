@@ -522,14 +522,10 @@ Section "SlimeVR Feeder App" SEC_FEEDER_APP
 SectionEnd
 
 Section "Microsoft Visual C++ Redistributable" SEC_MSVCPP
+    SetOutPath "${SLIMETEMP}"
+    DetailPrint "Installing Microsoft Visual C++ Redistributable..."
+    File "offline-files\vc_redist.x64.exe"
     SetOutPath $INSTDIR
-    DetailPrint "Downloading Microsoft Visual C++ Redistributable..."
-    NScurl::http GET "https://aka.ms/vs/17/release/vc_redist.x64.exe" "${SLIMETEMP}\vc_redist.x64.exe" /CANCEL /RESUME /END
-    Pop $0 ; Status text ("OK" for success)
-    ${If} $0 != "OK"
-        Abort "Failed to download Microsoft Visual C++ Redistributable. Reason: $0."
-    ${EndIf}
-    DetailPrint "Downloaded!"
     DetailPrint "Installing Microsoft Visual C++ Redistributable..."
     nsExec::ExecToLog '"${SLIMETEMP}\vc_redist.x64.exe" /install /passive /norestart' $0
     Pop $0 ; Status text ("OK" for success)
