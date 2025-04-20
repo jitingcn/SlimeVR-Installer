@@ -19,9 +19,9 @@ Unicode True
 !define SLIMETEMP "$TEMP\SlimeVRInstaller"
 
 # Define the Java Version Strings and to Check (JRE\relase -> JAVA_RUNTIME_VERSION=)
-!define JREVersion "17.0.15+6"
-!define JREDownloadURL "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.15%2B6/OpenJDK17U-jre_x64_windows_hotspot_17.0.15_6.zip"
-!define JREDownloadedFileZip "OpenJDK17U-jre_x64_windows_hotspot_17.0.15_6.zip"
+!define JREVersion "21.0.6+7"
+!define JREDownloadURL "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_x64_windows_hotspot_21.0.6_7.zip"
+!define JREDownloadedFileZip "OpenJDK21U-jre_x64_windows_hotspot_21.0.6_7.zip"
 Var JREneedInstall
 
 Var /GLOBAL SteamVRResult
@@ -463,7 +463,7 @@ Section "Java JRE" SEC_JRE
     Pop $0
     DetailPrint "Unzipping finished with $0."
 
-    FindFirst $0 $1 "${SLIMETEMP}\OpenJDK\jdk-17.*-jre"
+    FindFirst $0 $1 "${SLIMETEMP}\OpenJDK\jdk-21.*-jre"
     loop:
         StrCmp $1 "" done
         CopyFiles /SILENT "${SLIMETEMP}\OpenJDK\$1\*" "$INSTDIR\jre"
@@ -807,7 +807,7 @@ Section "-un." un.SEC_POST_UNINSTALL
 SectionEnd
 
 LangString DESC_SEC_SERVER ${LANG_ENGLISH} "Installs latest SlimeVR Server."
-LangString DESC_SEC_JRE ${LANG_ENGLISH} "Copies Java JRE 17 to installation folder. Required for SlimeVR Server."
+LangString DESC_SEC_JRE ${LANG_ENGLISH} "Copies Java JRE 21 to installation folder. Required for SlimeVR Server."
 LangString DESC_SEC_WEBVIEW ${LANG_ENGLISH} "Installs Webview2 if not already installed. Required for the SlimeVR GUI"
 LangString DESC_SEC_VRDRIVER ${LANG_ENGLISH} "Installs latest SteamVR Driver for SlimeVR."
 LangString DESC_SEC_USBDRIVERS ${LANG_ENGLISH} "A list of USB drivers that are used by various boards."
