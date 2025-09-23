@@ -29,8 +29,30 @@ jobs:
           submodules: recursive
 
       - name: Create plugins directory for NSIS
-        run: mkdir -p "${{ env.PLUGINS_DIR }}" | cp -rl "${{ env.WINDOWS_WEB_DIR }}/plugins"/*/* "${{ env.PLUGINS_DIR }}/"
-        shell: bash
+        run: |
+          if (!(Test-Path "${{ env.PLUGINS_DIR }}")) {
+            New-Item -Path "${{ env.PLUGINS_DIR }}" -ItemType Directory -Force
+          }
+
+          # Copy each plugin type
+          $pluginTypes = @("NScurl", "AccessControl", "Nsisunz", "NsProcess")
+
+          foreach ($plugin in $pluginTypes) {
+            $sourcePath = Join-Path "${{ env.WINDOWS_WEB_DIR }}" "plugins/$plugin"
+            if (Test-Path $sourcePath) {
+              Write-Output "Copying $plugin plugins..."
+              Get-ChildItem -Path $sourcePath -Recurse -File | ForEach-Object {
+                $relativePath = $_.FullName.Substring($sourcePath.Length + 1)
+                $destPath = Join-Path "${{ env.PLUGINS_DIR }}" $relativePath
+                $destDir = Split-Path $destPath -Parent
+                if (!(Test-Path $destDir)) {
+                  New-Item -Path $destDir -ItemType Directory -Force
+                }
+                Copy-Item $_.FullName $destPath -Force
+              }
+            }
+          }
+        shell: pwsh
 
       - name: Restore cached offline installer files
         uses: actions/cache@v4
@@ -47,6 +69,7 @@ jobs:
         uses: joncloud/makensis-action@v5.0
         with:
           script-file: ${{ env.WINDOWS_WEB_DIR }}/slimevr_web_installer.nsi
+          additional-plugin-paths: ${{ env.PLUGINS_DIR }}
 
       - name: Compute installer hashes
         run: ."${{ env.WINDOWS_WEB_DIR }}/manifest-hashes.ps1"
