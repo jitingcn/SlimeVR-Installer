@@ -13,8 +13,8 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
-    
+    runs-on: windows-2022
+
     env:
       # The directory of the web installer project
       WINDOWS_WEB_DIR: ${{ github.workspace }}/windows/web
@@ -23,7 +23,8 @@ jobs:
       GH_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v5
         with:
           submodules: recursive
 
@@ -43,10 +44,9 @@ jobs:
         shell: pwsh
 
       - name: Create NSIS installer
-        uses: joncloud/makensis-action@v4.1
+        uses: joncloud/makensis-action@v5.0
         with:
           script-file: ${{ env.WINDOWS_WEB_DIR }}/slimevr_web_installer.nsi
-          additional-plugin-paths: ${{ env.PLUGINS_DIR }}
 
       - name: Compute installer hashes
         run: ."${{ env.WINDOWS_WEB_DIR }}/manifest-hashes.ps1"
