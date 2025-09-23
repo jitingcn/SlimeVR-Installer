@@ -23,6 +23,14 @@ Unicode True
 !include .\steamdetect.nsh
 !include .\dlmacro.nsh
 
+; Language selection dialog configuration
+!define MUI_LANGDLL_WINDOWTITLE "Language Selection / 语言选择"
+!define MUI_LANGDLL_INFO "Please select the language for the installer:$\r$\n请选择安装程序的语言："
+!define MUI_LANGDLL_REGISTRY_ROOT "HKCU"
+!define MUI_LANGDLL_REGISTRY_KEY "Software\SlimeVR\Installer"
+!define MUI_LANGDLL_REGISTRY_VALUENAME "Installer Language"
+!define MUI_LANGDLL_ALLLANGUAGES
+
 !define CSIDL_COMMON_DOCUMENTS 0x002E ; Define CSIDL_COMMON_DOCUMENTS if not already defined
 
 !define SF_USELECTED  0
@@ -89,7 +97,7 @@ InstallDir "$PROGRAMFILES\SlimeVR Server" ; $InstDir default value. Defaults to 
 ShowInstDetails show
 ShowUninstDetails show
 
-BrandingText "SlimeVR Installer 0.2.2"
+BrandingText "SlimeVR Installer 0.2.2 offline package by vrc: jitingcat"
 
 # Admin rights are required for:
 # 1. Removing Start Menu shortcut in Windows 7+
@@ -113,6 +121,12 @@ Var STEAMDIR
 
 # Init functions start #
 Function .onInit
+    ; Clear any cached language selection to force display of language dialog
+    DeleteRegValue HKCU "Software\SlimeVR\Installer" "Installer Language"
+
+    ; Display language selection dialog
+    !insertmacro MUI_LANGDLL_DISPLAY
+
     InitPluginsDir
     ${If} ${RunningX64}
         ReadRegStr $0 HKLM SOFTWARE\WOW6432Node\Valve\Steam InstallPath
@@ -134,6 +148,9 @@ FunctionEnd
 
 # Detect Steam installation and just write path that we need to remove during uninstall (if present)
 Function un.onInit
+    ; Display language selection dialog for uninstaller
+    !insertmacro MUI_UNGETLANGUAGE
+
     ${If} ${RunningX64}
         ReadRegStr $0 HKLM SOFTWARE\WOW6432Node\Valve\Steam InstallPath
     ${Else}
@@ -184,12 +201,26 @@ FunctionEnd
 Page Custom startPage startPageLeave
 
 !define MUI_PAGE_CUSTOMFUNCTION_PRE componentsPre
+; Customize components page
+!define MUI_COMPONENTSPAGE_TEXT_TOP "$(COMPONENTS_PAGE_TEXT_TOP)"
+!define MUI_COMPONENTSPAGE_TEXT_DESCRIPTION_TITLE "$(COMPONENTS_PAGE_TEXT_DESCRIPTION_TITLE)"
+!define MUI_COMPONENTSPAGE_TEXT_DESCRIPTION_INFO "$(COMPONENTS_PAGE_TEXT_DESCRIPTION_INFO)"
+!define MUI_PAGE_HEADER_TEXT "$(COMPONENTS_PAGE_TITLE)"
+!define MUI_PAGE_HEADER_SUBTEXT "$(COMPONENTS_PAGE_SUBTITLE)"
 # !define MUI_PAGE_CUSTOMFUNCTION_SHOW componentsShow
 !insertmacro MUI_PAGE_COMPONENTS
 
+; Customize directory page
+!define MUI_DIRECTORYPAGE_TEXT_TOP "$(DIRECTORY_PAGE_TEXT_TOP)"
+!define MUI_DIRECTORYPAGE_TEXT_DESTINATION "$(DIRECTORY_PAGE_TEXT_DESTINATION)"
+!define MUI_DIRECTORYPAGE_HEADER_TEXT "$(DIRECTORY_PAGE_TITLE)"
+!define MUI_DIRECTORYPAGE_HEADER_SUBTEXT "$(DIRECTORY_PAGE_SUBTITLE)"
 !define MUI_PAGE_CUSTOMFUNCTION_PRE installerActionPre
 !insertmacro MUI_PAGE_DIRECTORY
 
+; Customize installation page
+!define MUI_INSTFILESPAGE_FINISHHEADER_TEXT "$(INSTFILES_PAGE_TITLE)"
+!define MUI_INSTFILESPAGE_FINISHHEADER_SUBTEXT "$(INSTFILES_PAGE_SUBTITLE)"
 !define MUI_PAGE_CUSTOMFUNCTION_PRE cleanTemp ; Clean temp on pre-install to avoid any leftover files failing the installation, temp files will be removed in .onGUIEnd
 !insertmacro MUI_PAGE_INSTFILES
 
@@ -201,10 +232,16 @@ Page Custom endPage endPageLeave
 UninstPage custom un.startPageConfirm un.endPageunConfirm
 !insertmacro MUI_UNPAGE_INSTFILES
 
-!insertmacro MUI_LANGUAGE "English"
+; Include language files
+!include .\languages\english.nsh
+!include .\languages\chinese_simplified.nsh
 
-LangString START_PAGE_TITLE ${LANG_ENGLISH} "Welcome"
-LangString START_PAGE_SUBTITLE ${LANG_ENGLISH} "Welcome to SlimeVR Setup!"
+; Define supported languages
+!insertmacro MUI_LANGUAGE "English"
+!insertmacro MUI_LANGUAGE "SimpChinese"
+
+; Reserve files for faster startup
+!insertmacro MUI_RESERVEFILE_LANGDLL
 
 Function startPage
     Call UpdateLabelTimer
@@ -220,10 +257,12 @@ Function startPage
     ${If} $0 != ""
         StrCpy $INSTDIR $0
 
-        ${NSD_CreateLabel} 0 0 100% 20u 'An existing installation was detected in "$0". Choose an option and click Next to proceed.'
-        ${NSD_CreateRadioButton} 0 40u 100% 10u "Update"
+        ; Build the message dynamically
+        StrCpy $1 "$(EXISTING_INSTALLATION_DETECTED_1)$0$(EXISTING_INSTALLATION_DETECTED_2)"
+        ${NSD_CreateLabel} 0 0 100% 20u '$1'
+        ${NSD_CreateRadioButton} 0 40u 100% 10u "$(UPDATE_OPTION)"
         Pop $UPDATE
-        ${NSD_CreateRadioButton} 0 55u 100% 10u "Repair"
+        ${NSD_CreateRadioButton} 0 55u 100% 10u "$(REPAIR_OPTION)"
         Pop $REPAIR
 
         ${If} $SELECTED_INSTALLER_ACTION == "update"
@@ -234,7 +273,7 @@ Function startPage
             SendMessage $UPDATE ${BM_SETCHECK} 1 0
         ${EndIf}
     ${Else}
-        ${NSD_CreateLabel} 0 0 100% 50u "Click Next to proceed with installation."
+        ${NSD_CreateLabel} 0 0 100% 50u "$(CLICK_NEXT_TO_PROCEED)"
         Pop $0
     ${EndIf}
 
@@ -272,25 +311,25 @@ Function endPage
         Abort
     ${EndIf}
 
-    ${NSD_CreateLabel} 0 0 100% 12u "The installation is finished!"
+    ${NSD_CreateLabel} 0 0 100% 12u "$(INSTALLATION_FINISHED)"
     Pop $0
 
-    ${NSD_CreateCheckbox} 0 25u 100% 10u "Open SlimeVR Quick setup guide"
+    ${NSD_CreateCheckbox} 0 25u 100% 10u "$(OPEN_DOCUMENTATION_TEXT)"
     Pop $OPEN_DOCUMENTATION
     # Don't open documentation if we're updating
     ${If} $SELECTED_INSTALLER_ACTION == ""
         ${NSD_Check} $OPEN_DOCUMENTATION
     ${EndIf}
 
-    ${NSD_CreateCheckbox} 0 40u 100% 10u "Create Desktop shortcut"
+    ${NSD_CreateCheckbox} 0 40u 100% 10u "$(CREATE_DESKTOP_SHORTCUT_TEXT)"
     Pop $CREATE_DESKTOP_SHORTCUT
     ${NSD_Check} $CREATE_DESKTOP_SHORTCUT
 
-    ${NSD_CreateCheckbox} 0 55u 100% 10u "Create Start Menu shortcuts"
+    ${NSD_CreateCheckbox} 0 55u 100% 10u "$(CREATE_STARTMENU_SHORTCUTS_TEXT)"
     Pop $CREATE_STARTMENU_SHORTCUTS
     ${NSD_Check} $CREATE_STARTMENU_SHORTCUTS
 
-    ${NSD_CreateCheckbox} 0 70u 100% 10u "Open SlimeVR Server"
+    ${NSD_CreateCheckbox} 0 70u 100% 10u "$(OPEN_SLIMEVR_TEXT)"
     Pop $OPEN_SLIMEVR
     ${NSD_Check} $OPEN_SLIMEVR
 
@@ -443,23 +482,23 @@ Function un.endPageunConfirm
     nsDialogs::KillTimer $0
 FunctionEnd
 
-Section "SlimeVR Server" SEC_SERVER
+Section "$(COMP_SEC_SERVER)" SEC_SERVER
     SectionIn RO
 
-    DetailPrint "Installing SlimeVR Server..."
+    DetailPrint "$(INSTALLING_SLIMEVR_SERVER)"
     SetOutPath "${SLIMETEMP}"
     File "offline-files\SlimeVR-win64.zip"
     SetOutPath $INSTDIR
 
     nsisunz::Unzip "${SLIMETEMP}\SlimeVR-win64.zip" "${SLIMETEMP}\SlimeVR\"
     Pop $0
-    DetailPrint "Unzipping finished with $0."
+    DetailPrint "$(UNZIPPING_FINISHED)"
 
     ${If} $SELECTED_INSTALLER_ACTION == "update"
         Delete "$INSTDIR\slimevr-ui.exe"
     ${EndIf}
 
-    DetailPrint "Copying SlimeVR Server to installation folder..."
+    DetailPrint "$(COPYING_SLIMEVR_SERVER)"
     CopyFiles /SILENT "${SLIMETEMP}\SlimeVR\SlimeVR\*" $INSTDIR
 
     IfFileExists "$INSTDIR\slimevr-ui.exe" found not_found
@@ -475,28 +514,28 @@ Section "SlimeVR Server" SEC_SERVER
     WriteUninstaller "$INSTDIR\uninstall.exe"
 SectionEnd
 
-Section "Webview2" SEC_WEBVIEW
+Section "$(COMP_SEC_WEBVIEW)" SEC_WEBVIEW
     SectionIn RO
     # Read Only protects it from Installing when it is not needed
 
-    DetailPrint "Installing webview2!"
+    DetailPrint "$(INSTALLING_WEBVIEW2)"
     SetOutPath "${SLIMETEMP}"
     File "offline-files\MicrosoftEdgeWebView2RuntimeInstaller.exe"
     SetOutPath $INSTDIR
 
     nsExec::ExecToLog '"${SLIMETEMP}\MicrosoftEdgeWebView2RuntimeInstaller.exe" /silent /install' $0
     Pop $0
-    DetailPrint "Installing finished with $0."
+    DetailPrint "$(INSTALLING_FINISHED)"
     ${If} $0 != 0
-        Abort "Failed to install webview 2"
+        Abort "$(FAILED_INSTALL_WEBVIEW2)"
     ${EndIf}
 
 SectionEnd
 
-Section "Java JRE" SEC_JRE
+Section "$(COMP_SEC_JRE)" SEC_JRE
     SectionIn RO
 
-    DetailPrint "Installing Java JRE ${JREVersion}..."
+    DetailPrint "$(INSTALLING_JAVA_JRE)"
     SetOutPath "${SLIMETEMP}"
     File "offline-files\${JREDLFileZip}"
     SetOutPath $INSTDIR
@@ -504,11 +543,11 @@ Section "Java JRE" SEC_JRE
     # Extract the JRE zip file
     nsisunz::Unzip "${SLIMETEMP}\${JREDLFileZip}" "${SLIMETEMP}\OpenJDK\"
     Pop $0
-    DetailPrint "Unzipping JRE finished with $0."
+    DetailPrint "$(UNZIPPING_JRE_FINISHED)"
 
     # Make sure to delete all files on a update from jre, so if there is a new version no old files are left.
     IfFileExists "$INSTDIR\jre" 0 SEC_JRE_DIRNOTFOUND
-        DetailPrint "Removing old Java JRE..."
+        DetailPrint "$(REMOVING_OLD_JAVA)"
         RMdir /r "$INSTDIR\jre"
         CreateDirectory "$INSTDIR\jre"
     SEC_JRE_DIRNOTFOUND:
@@ -523,22 +562,22 @@ Section "Java JRE" SEC_JRE
     FindClose $0
 SectionEnd
 
-Section "SteamVR Driver" SEC_VRDRIVER
-    DetailPrint "Installing SteamVR Driver..."
+Section "$(COMP_SEC_VRDRIVER)" SEC_VRDRIVER
+    DetailPrint "$(INSTALLING_STEAMVR_DRIVER)"
     SetOutPath "${SLIMETEMP}"
     File "offline-files\slimevr-openvr-driver-win64.zip"
     SetOutPath $INSTDIR
 
-    DetailPrint "Unpacking files..."
+    DetailPrint "$(UNPACKING_FILES)"
     nsisunz::Unzip "${SLIMETEMP}\slimevr-openvr-driver-win64.zip" "${SLIMETEMP}\slimevr-openvr-driver-win64\"
     Pop $0
-    DetailPrint "Unzipping finished with $0."
+    DetailPrint "$(UNZIPPING_FINISHED)"
 
     # Include SteamVR powershell script to register/unregister driver
     File "steamvr.ps1"
     File "steamcleanexternaldrivers.ps1"
 
-    DetailPrint "Removing old external drivers in SteamVR Config..."
+    DetailPrint "$(REMOVING_OLD_DRIVERS)"
     # If powershell is present - rely on automatic detection.
 
     ${DisableX64FSRedirection}
@@ -556,130 +595,130 @@ Section "SteamVR Driver" SEC_VRDRIVER
     Delete "$INSTDIR\steamcleanexternaldrivers.lnk"
     Delete "$INSTDIR\steamcleanexternaldrivers.ps1"
 
-    DetailPrint "Copying SteamVR Driver to SteamVR..."
+    DetailPrint "$(COPYING_STEAMVR_DRIVER)"
     ${DisableX64FSRedirection}
     nsExec::ExecToLog '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -ExecutionPolicy Bypass -File "$INSTDIR\steamvr.ps1" -SteamPath "$STEAMDIR" -DriverPath "${SLIMETEMP}\slimevr-openvr-driver-win64\slimevr"' $0
     ${EnableX64FSRedirection}
     Pop $0
     ${If} $0 != 0
-        nsDialogs::SelectFolderDialog "Specify a path to your SteamVR folder" "$STEAMDIR\steamapps\common\SteamVR"
+        nsDialogs::SelectFolderDialog "$(SPECIFY_STEAMVR_FOLDER)" "$STEAMDIR\steamapps\common\SteamVR"
         Pop $0
         ${If} $0 == "error"
-            Abort "Failed to copy SlimeVR Driver."
+            Abort "$(FAILED_COPY_SLIMEVR_DRIVER)"
         ${Endif}
         CopyFiles /SILENT "${SLIMETEMP}\slimevr-openvr-driver-win64\slimevr" "$0\drivers\slimevr"
     ${EndIf}
 SectionEnd
 
-Section "SlimeVR Feeder App" SEC_FEEDER_APP
-    DetailPrint "Installing SlimeVR Feeder App..."
+Section "$(COMP_SEC_FEEDER_APP)" SEC_FEEDER_APP
+    DetailPrint "$(INSTALLING_SLIMEVR_FEEDER_APP)"
     SetOutPath "${SLIMETEMP}"
     File "offline-files\SlimeVR-Feeder-App-win64.zip"
     SetOutPath $INSTDIR
 
-    DetailPrint "Unpacking files..."
+    DetailPrint "$(UNPACKING_FILES)"
     nsisunz::Unzip "${SLIMETEMP}\SlimeVR-Feeder-App-win64.zip" "${SLIMETEMP}"
     Pop $0
-    DetailPrint "Unzipping finished with $0."
+    DetailPrint "$(UNZIPPING_FINISHED)"
 
-    DetailPrint "Copying SlimeVR Feeder App..."
+    DetailPrint "$(COPYING_SLIMEVR_FEEDER_APP)"
     CopyFiles /SILENT "${SLIMETEMP}\SlimeVR-Feeder-App-win64\*" "$INSTDIR\Feeder-App"
 
-    DetailPrint "Installing SlimeVR Feeder App driver..."
+    DetailPrint "$(INSTALLING_SLIMEVR_FEEDER_APP_DRIVER)"
     nsExec::ExecToLog '"$INSTDIR\Feeder-App\SlimeVR-Feeder-App.exe" --install'
 SectionEnd
 
-Section "Microsoft Visual C++ Redistributable" SEC_MSVCPP
+Section "$(COMP_SEC_MSVCPP)" SEC_MSVCPP
     SetOutPath "${SLIMETEMP}"
-    DetailPrint "Installing Microsoft Visual C++ Redistributable..."
+    DetailPrint "$(INSTALLING_MSVCPP)"
     File "offline-files\vc_redist.x64.exe"
     SetOutPath $INSTDIR
 
-    DetailPrint "Installing Microsoft Visual C++ Redistributable..."
+    DetailPrint "$(INSTALLING_MSVCPP)"
     nsExec::ExecToLog '"${SLIMETEMP}\vc_redist.x64.exe" /install /passive /norestart' $0
     Pop $0 ; Status text ("OK" for success)
     ; Handle return codes
     ${If} $0 == 0
-        DetailPrint "Microsoft Visual C++ Redistributable installed successfully."
+        DetailPrint "$(MSVCPP_INSTALLED_SUCCESSFULLY)"
     ${ElseIf} $0 == 3010
-        DetailPrint "Microsoft Visual C++ Redistributable installed successfully, but a reboot is required."
+        DetailPrint "$(MSVCPP_INSTALLED_REBOOT_REQUIRED)"
         SetRebootFlag true
     ${ElseIf} $0 == 1602
-        Abort "User canceled the Microsoft Visual C++ Redistributable installation."
+        Abort "$(MSVCPP_USER_CANCELED)"
     ${ElseIf} $0 == 1603
-        Abort "Fatal error during Microsoft Visual C++ Redistributable installation."
+        Abort "$(MSVCPP_FATAL_ERROR)"
     ${ElseIf} $0 == 1618
-        Abort "Installation aborted: Another installation is in progress."
+        Abort "$(MSVCPP_INSTALLATION_IN_PROGRESS)"
     ${ElseIf} $0 == 1638
-        DetailPrint "Microsoft Visual C++ Redistributable is already installed or a newer version is present."
+        DetailPrint "$(MSVCPP_ALREADY_INSTALLED)"
     ${ElseIf} $0 == 1641
-        DetailPrint "Microsoft Visual C++ Redistributable installed successfully, and a system restart is happening."
+        DetailPrint "$(MSVCPP_INSTALLED_RESTART_HAPPENING)"
     ${ElseIf} $0 == 5100
-        Abort "Installation failed: Unsupported operating system."
+        Abort "$(MSVCPP_UNSUPPORTED_OS)"
     ${Else}
-        Abort "Microsoft Visual C++ Redistributable installation failed with unknown error code: $0"
+        Abort "$(MSVCPP_UNKNOWN_ERROR)"
     ${EndIf}
 SectionEnd
 
-SectionGroup /e "USB drivers" SEC_USBDRIVERS
+SectionGroup /e "$(COMP_SEC_USBDRIVERS)" SEC_USBDRIVERS
 
-    Section "CP210x driver" SEC_CP210X
+    Section "$(COMP_SEC_CP210X)" SEC_CP210X
         # CP210X drivers (NodeMCU v2)
         SetOutPath "${SLIMETEMP}\slimevr_usb_drivers_inst\CP201x"
-        DetailPrint "Installing CP210x driver..."
+        DetailPrint "$(INSTALLING_CP210X_DRIVER)"
         File /r "CP201x\*"
         ${DisableX64FSRedirection}
         nsExec::Exec '"$SYSDIR\PnPutil.exe" -i -a "${SLIMETEMP}\slimevr_usb_drivers_inst\CP201x\silabser.inf"' $0
         ${EnableX64FSRedirection}
         Pop $0
         ${If} $0 == 0
-            DetailPrint "Success!"
+            DetailPrint "$(DRIVER_INSTALL_SUCCESS)"
         ${ElseIf} $0 == 259
-            DetailPrint "No devices match the supplied driver or the target device is already using a better or newer driver than the driver specified for installation."
+            DetailPrint "$(DRIVER_NO_DEVICES_MATCH)"
         ${ElseIf} $0 == 3010
-            DetailPrint "The requested operation completed successfully and a system reboot is required."
+            DetailPrint "$(DRIVER_REBOOT_REQUIRED)"
         ${Else}
-            Abort "Failed to install CP210x driver. Error code: $0."
+            Abort "$(FAILED_INSTALL_CP210X_DRIVER)"
         ${Endif}
     SectionEnd
 
-    Section "CH340 driver" SEC_CH340
+    Section "$(COMP_SEC_CH340)" SEC_CH340
         # CH340 drivers (NodeMCU v3)
         SetOutPath "${SLIMETEMP}\slimevr_usb_drivers_inst\CH341SER"
-        DetailPrint "Installing CH340 driver..."
+        DetailPrint "$(INSTALLING_CH340_DRIVER)"
         File /r "CH341SER\*"
         ${DisableX64FSRedirection}
         nsExec::Exec '"$SYSDIR\PnPutil.exe" -i -a "${SLIMETEMP}\slimevr_usb_drivers_inst\CH341SER\CH341SER.INF"' $0
         ${EnableX64FSRedirection}
         Pop $0
         ${If} $0 == 0
-            DetailPrint "Success!"
+            DetailPrint "$(DRIVER_INSTALL_SUCCESS)"
         ${ElseIf} $0 == 259
-            DetailPrint "No devices match the supplied driver or the target device is already using a better or newer driver than the driver specified for installation."
+            DetailPrint "$(DRIVER_NO_DEVICES_MATCH)"
         ${ElseIf} $0 == 3010
-            DetailPrint "The requested operation completed successfully and a system reboot is required."
+            DetailPrint "$(DRIVER_REBOOT_REQUIRED)"
         ${Else}
-            Abort "Failed to install CH340 driver. Error code: $0."
+            Abort "$(FAILED_INSTALL_CH340_DRIVER)"
         ${Endif}
     SectionEnd
 
-    Section /o "CH9102x driver" SEC_CH9102X
+    Section /o "$(COMP_SEC_CH9102X)" SEC_CH9102X
         # CH343 drivers (NodeMCU v2.1, some NodeMCU v3?)
         SetOutPath "${SLIMETEMP}\slimevr_usb_drivers_inst\CH343SER"
-        DetailPrint "Installing CH910x driver..."
+        DetailPrint "$(INSTALLING_CH910X_DRIVER)"
         File /r "CH343SER\*"
         ${DisableX64FSRedirection}
         nsExec::Exec '"$SYSDIR\PnPutil.exe" -i -a "${SLIMETEMP}\slimevr_usb_drivers_inst\CH343SER\CH343SER.INF"' $0
         ${EnableX64FSRedirection}
         Pop $0
         ${If} $0 == 0
-            DetailPrint "Success!"
+            DetailPrint "$(DRIVER_INSTALL_SUCCESS)"
         ${ElseIf} $0 == 259
-            DetailPrint "No devices match the supplied driver or the target device is already using a better or newer driver than the driver specified for installation."
+            DetailPrint "$(DRIVER_NO_DEVICES_MATCH)"
         ${ElseIf} $0 == 3010
-            DetailPrint "The requested operation completed successfully and a system reboot is required."
+            DetailPrint "$(DRIVER_REBOOT_REQUIRED)"
         ${Else}
-            Abort "Failed to install CH910x driver. Error code: $0."
+            Abort "$(FAILED_INSTALL_CH910X_DRIVER)"
         ${Endif}
     SectionEnd
 
@@ -688,16 +727,16 @@ SectionGroupEnd
 Section "-" SEC_FIREWALL
     ${If} $SELECTED_INSTALLER_ACTION == "repair"
         ${OrIf} $SELECTED_INSTALLER_ACTION == "update"
-        DetailPrint "Removing SlimeVR Server from firewall exceptions...."
+        DetailPrint "$(REMOVING_FIREWALL_EXCEPTION)"
         nsExec::ExecToLog '"$INSTDIR\firewall_uninstall.bat"'
     ${Endif}
 
-    DetailPrint "Adding SlimeVR Server to firewall exceptions...."
+    DetailPrint "$(ADDING_FIREWALL_EXCEPTION)"
     nsExec::ExecToLog '"$INSTDIR\firewall.bat"'
 SectionEnd
 
 Section "-" SEC_REGISTERAPP
-    DetailPrint "Registering installation..."
+    DetailPrint "$(REGISTERING_INSTALLATION)"
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\SlimeVR" \
                     "InstallLocation" "$INSTDIR"
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\SlimeVR" \
@@ -835,7 +874,7 @@ Section "-un.SlimeVR Server" un.SEC_SERVER
 
     IfErrors fail success
     fail:
-        Abort "Failed to remove SlimeVR Server files. Make sure SlimeVR Server is closed."
+        Abort "$(FAILED_REMOVE_SLIMEVR_SERVER)"
     success:
 SectionEnd
 
@@ -845,7 +884,7 @@ Section "-un.SteamVR Driver" un.SEC_VRDRIVER
     ${EnableX64FSRedirection}
     Pop $0
     ${If} $0 != 0
-        DetailPrint "Failed to remove SteamVR Driver."
+        DetailPrint "$(FAILED_REMOVE_STEAMVR_DRIVER)"
     ${EndIf}
     Delete "$INSTDIR\steamvr.ps1"
 SectionEnd
@@ -853,42 +892,27 @@ SectionEnd
 Section "-un.SlimeVR Feeder App" un.SEC_FEEDER_APP
     IfFileExists "$INSTDIR\Feeder-App\SlimeVR-Feeder-App.exe" found not_found
     found:
-        DetailPrint "Unregistering SlimeVR Feeder App driver..."
+        DetailPrint "$(UNREGISTERING_SLIMEVR_FEEDER_APP_DRIVER)"
         nsExec::ExecToLog '"$INSTDIR\Feeder-App\SlimeVR-Feeder-App.exe" --uninstall'
-        DetailPrint "Removing SlimeVR Feeder App..."
+        DetailPrint "$(REMOVING_SLIMEVR_FEEDER_APP)"
         RMdir /r "$INSTDIR\Feeder-App"
     not_found:
 SectionEnd
 
 Section "-un." un.SEC_FIREWALL
-    DetailPrint "Removing SlimeVR Server from firewall exceptions...."
+    DetailPrint "$(REMOVING_FIREWALL_EXCEPTION)"
     nsExec::Exec '"$INSTDIR\firewall_uninstall.bat"'
     Pop $0
     Delete "$INSTDIR\firewall*.bat"
 SectionEnd
 
 Section "-un." un.SEC_POST_UNINSTALL
-    DetailPrint "Unregistering installation..."
+    DetailPrint "$(UNREGISTERING_INSTALLATION)"
     DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\SlimeVR"
     Delete "$INSTDIR\uninstall.exe"
     RMDir $INSTDIR
-    DetailPrint "Done."
+    DetailPrint "$(UNINSTALL_DONE)"
 SectionEnd
-
-LangString DESC_SEC_SERVER ${LANG_ENGLISH} "Installs latest SlimeVR Server."
-LangString DESC_SEC_JRE ${LANG_ENGLISH} "Copies Java JRE 17 to installation folder. Required for SlimeVR Server."
-LangString DESC_SEC_WEBVIEW ${LANG_ENGLISH} "Installs Webview2 if not already installed. Required for the SlimeVR GUI"
-LangString DESC_SEC_VRDRIVER ${LANG_ENGLISH} "Installs latest SteamVR Driver for SlimeVR."
-LangString DESC_SEC_USBDRIVERS ${LANG_ENGLISH} "A list of USB drivers that are used by various boards."
-LangString DESC_SEC_FEEDER_APP ${LANG_ENGLISH} "Installs SlimeVR Feeder App that sends position of SteamVR trackers (Vive trackers, controllers) to SlimeVR Server. Required for elbow tracking."
-LangString DESC_SEC_MSVCPP ${LANG_ENGLISH} "Installs the latest Microsoft Visual C++ Redistributable Version (required by the SteamVR Driver and the SlimeVR Feeder)"
-LangString DESC_SEC_CP210X ${LANG_ENGLISH} "Installs CP210X USB driver that comes with the following boards: NodeMCU v2, Wemos D1 Mini."
-LangString DESC_SEC_CH340 ${LANG_ENGLISH} "Installs CH340 USB driver that comes with the following boards: NodeMCU v3, SlimeVR, Wemos D1 Mini."
-LangString DESC_SEC_CH9102x ${LANG_ENGLISH} "Installs CH9102x USB driver that comes with the following boards: NodeMCU v2.1."
-LangString DESC_STEAM_NOTFOUND ${LANG_ENGLISH} "No Steam installation detected. Steam and SteamVR are required to be installed and run at least once to install the SteamVR Driver."
-LangString DESC_STEAMVR_RUNNING ${LANG_ENGLISH} "SteamVR is running! Please close SteamVR."
-LangString DESC_SLIMEVR_RUNNING ${LANG_ENGLISH} "SlimeVR is running! Please close SlimeVR."
-LangString DESC_PROCESS_ERROR ${LANG_ENGLISH} "An error happend while trying for look for $0 nsProcess::FindProcess Returns "
 
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
     !insertmacro MUI_DESCRIPTION_TEXT ${SEC_SERVER} $(DESC_SEC_SERVER)
@@ -900,5 +924,5 @@ LangString DESC_PROCESS_ERROR ${LANG_ENGLISH} "An error happend while trying for
     !insertmacro MUI_DESCRIPTION_TEXT ${SEC_USBDRIVERS} $(DESC_SEC_USBDRIVERS)
     !insertmacro MUI_DESCRIPTION_TEXT ${SEC_CP210X} $(DESC_SEC_CP210X)
     !insertmacro MUI_DESCRIPTION_TEXT ${SEC_CH340} $(DESC_SEC_CH340)
-    !insertmacro MUI_DESCRIPTION_TEXT ${SEC_CH9102x} $(DESC_SEC_CH9102x)
+    !insertmacro MUI_DESCRIPTION_TEXT ${SEC_CH9102X} $(DESC_SEC_CH9102x)
 !insertmacro MUI_FUNCTION_DESCRIPTION_END

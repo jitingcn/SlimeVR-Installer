@@ -15,16 +15,16 @@
 ;   !insertmacro dlFile "local" "Java JRE" "17.0.15+6" "assets\\jre.zip" "jre.zip"
 !macro dlFile source_type name version url_or_path local_file
     !if "${source_type}" == "url"
-        DetailPrint "Downloading ${name} ${version}..."
+        DetailPrint "$(DOWNLOADING) ${name} ${version}..."
         NScurl::http GET "${url_or_path}" "${SLIMETEMP}\${local_file}" /CANCEL /RESUME /END
         Pop $0 ; Status text ("OK" for success)
         ${If} $0 != "OK"
-            Abort "Failed to download ${name} ${version}. Reason: $0."
+            Abort "$(FAILED_TO_DOWNLOAD) ${name} ${version}. $(REASON) $0."
         ${EndIf}
-        DetailPrint "Downloaded!"
+        DetailPrint "$(DOWNLOADED)"
     !else
         !if "${source_type}" == "local"
-            DetailPrint "Using bundled ${name} ${version}..."
+            DetailPrint "$(USING_BUNDLED) ${name} ${version}..."
             Push $0
             StrCpy $0 $OUTDIR
             CreateDirectory "${SLIMETEMP}"
@@ -33,10 +33,10 @@
             SetOutPath $0
             Pop $0
             IfFileExists "${SLIMETEMP}\${local_file}" +2 0
-                Abort "Failed to place bundled ${name} ${version} at ${SLIMETEMP}\\${local_file}."
-            DetailPrint "Bundled file ready: ${SLIMETEMP}\\${local_file}"
+                Abort "$(FAILED_TO_PLACE_BUNDLED) ${name} ${version} $(AT) ${SLIMETEMP}\\${local_file}."
+            DetailPrint "$(BUNDLED_FILE_READY) ${SLIMETEMP}\\${local_file}"
         !else
-            Abort "dlFile: Unknown source_type '${source_type}'. Use 'url' or 'local'."
+            Abort "$(UNKNOWN_SOURCE_TYPE) '${source_type}'. $(USE_URL_OR_LOCAL)"
         !endif
     !endif
 !macroend
@@ -63,12 +63,12 @@
 ;   !insertmacro unzipFile "Java JRE" "${JREVersion}" "${JREDownloadedFileZip}" "OpenJDK"
 !macro unzipFile name version local_file local_dir
 
-    DetailPrint "Unzipping ${name} ${version} to installation folder...."
+    DetailPrint "$(UNZIPPING_TO_INSTALLATION_FOLDER) ${name} ${version} $(TO_INSTALLATION_FOLDER)"
     nsisunz::Unzip "${local_file}" "${local_dir}"
     Pop $0
     StrCmp $0 "success" ok
-        Abort "Failed to unzip ${name} ${version}. Source: ${local_file} Target: ${local_dir} Reason: $0."
+        Abort "$(FAILED_TO_UNZIP) ${name} ${version}. $(SOURCE) ${local_file} $(TARGET) ${local_dir} $(REASON) $0."
     ok:
-    DetailPrint "Unzipped ${name} ${version}."
+    DetailPrint "$(UNZIPPED) ${name} ${version}."
 
 !macroend
