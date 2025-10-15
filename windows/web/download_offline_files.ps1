@@ -61,7 +61,7 @@ Write-Output "Output directory set to ""$DestDir"""
 
 $ServerVersion = "v0.16.3"
 $JavaVersion = "17.0.16+8"
-$DriverVersion = "v0.3.1-rc.1"
+$DriverVersion = "v0.3.1"
 $FeederVersion = "v0.2.11"
 
 $JavaMajorVersion = $JavaVersion.Split(".")[0]
