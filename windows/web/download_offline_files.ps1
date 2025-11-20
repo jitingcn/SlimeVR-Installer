@@ -59,10 +59,10 @@ Function Get-File-From-Uri {
 $DestDir = New-Item (& { $Env:WINDOWS_OFFLINE_FILES_DIR ?? "offline-files" }) -ItemType directory -Force
 Write-Output "Output directory set to ""$DestDir"""
 
-$ServerVersion = "v0.17.0-rc.1"
+$ServerVersion = "v0.17.0"
 $JavaVersion = "17.0.16+8"
 $DriverVersion = "v0.3.1"
-$FeederVersion = "v0.2.14"
+$FeederVersion = "v0.2.15"
 
 $JavaMajorVersion = $JavaVersion.Split(".")[0]
 $JavaFileName = "OpenJDK${JavaMajorVersion}U-jre_x64_windows_hotspot_$($JavaVersion -Replace "\+", "_").zip"
