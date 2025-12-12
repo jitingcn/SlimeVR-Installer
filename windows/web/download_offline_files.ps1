@@ -59,7 +59,7 @@ Function Get-File-From-Uri {
 $DestDir = New-Item (& { $Env:WINDOWS_OFFLINE_FILES_DIR ?? "offline-files" }) -ItemType directory -Force
 Write-Output "Output directory set to ""$DestDir"""
 
-$ServerVersion = "v18.0.0"
+$ServerVersion = "v18.1.0"
 $JavaVersion = "17.0.16+8"
 $DriverVersion = "v0.3.1"
 $FeederVersion = "v0.2.15"
